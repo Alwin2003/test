@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FASHN VTON 1.5 - Virtual Try-On Studio</title>
+  <meta name="description" content="State-of-the-art maskless virtual try-on studio powered by FASHN VTON v1.5 diffusion model.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <!-- Background Glow Accents -->
+  <div class="bg-glow glow-1"></div>
+  <div class="bg-glow glow-2"></div>
+  <div class="bg-glow glow-3"></div>
+
+  <!-- Header -->
+  <header class="app-header" id="app-header">
+    <div class="header-content">
+      <div class="brand">
+        <div class="brand-badge">v1.5</div>
+        <div class="brand-text">
+          <h1 class="brand-title">FASHN VTON <span class="gradient-text">Studio</span></h1>
+          <p class="brand-subtitle">Photorealistic Maskless Virtual Try-On in Pixel Space</p>
+        </div>
+      </div>
+
+      <div class="header-status" id="header-status-box">
+        <div class="status-indicator" id="server-status-dot"></div>
+        <div class="status-details">
+          <span class="status-label" id="server-status-label">Checking Server...</span>
+          <span class="status-device" id="server-device-badge">Detecting Device</span>
+        </div>
+        <button class="icon-btn" id="btn-refresh-status" title="Refresh system status">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Server Notice Banner (Shown if weights need download) -->
+  <div class="notice-banner hidden" id="notice-banner">
+    <div class="notice-content">
+      <span class="notice-icon">⚡</span>
+      <div class="notice-text">
+        <strong id="notice-title">Model Weights Notice</strong>
+        <p id="notice-desc">Model weights are checking...</p>
+      </div>
+      <button class="btn btn-sm btn-secondary" id="btn-banner-action">Download Weights</button>
+      <button class="btn-close" id="btn-close-banner">&times;</button>
+    </div>
+  </div>
+
+  <!-- Main Container -->
+  <main class="main-layout" id="main-layout">
+    
+    <!-- Left Column: Controls & Inputs -->
+    <section class="panel input-panel" id="input-panel">
+      
+      <!-- Preset Quick-Pickers -->
+      <div class="card-section">
+        <div class="section-header">
+          <span class="section-num">01</span>
+          <div>
+            <h2 class="section-title">Quick Presets</h2>
+            <p class="section-subtitle">Click to instantly load high-res test models & garments</p>
+          </div>
+        </div>
+
+        <div class="preset-group">
+          <div class="preset-subgroup">
+            <span class="preset-label">Models:</span>
+            <div class="preset-chips" id="model-presets-container">
+              <button type="button" class="preset-chip" id="preset-model-1" data-type="model" data-src="/assets/model_preset_1.webp">
+                <img src="/assets/model_preset_1.webp" alt="Model 1">
+                <span>Female Studio</span>
+              </button>
+              <button type="button" class="preset-chip" id="preset-model-2" data-type="model" data-src="/assets/model_preset_2.jpg">
+                <img src="/assets/model_preset_2.jpg" alt="Model 2">
+                <span>Male Studio</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="preset-subgroup">
+            <span class="preset-label">Garments:</span>
+            <div class="preset-chips" id="garment-presets-container">
+              <button type="button" class="preset-chip" id="preset-garment-1" data-type="garment" data-src="/assets/garment_preset_1.webp" data-category="tops" data-photo="model">
+                <img src="/assets/garment_preset_1.webp" alt="Garment 1">
+                <span>Orange Knit (Model)</span>
+              </button>
+              <button type="button" class="preset-chip" id="preset-garment-2" data-type="garment" data-src="/assets/garment_preset_2.jpg" data-category="tops" data-photo="flat-lay">
+                <img src="/assets/garment_preset_2.jpg" alt="Garment 2">
+                <span>Leather Jacket (Flat)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upload Zone: Person & Garment -->
+      <div class="card-section">
+        <div class="section-header">
+          <span class="section-num">02</span>
+          <div>
+            <h2 class="section-title">Upload Imagery</h2>
+            <p class="section-subtitle">Drop photos or choose from your computer</p>
+          </div>
+        </div>
+
+        <div class="upload-grid">
+          <!-- Person Card -->
+          <div class="upload-card" id="person-dropzone">
+            <div class="upload-card-header">
+              <span class="card-tag">Target Person</span>
+              <button type="button" class="btn-clear hidden" id="btn-clear-person" title="Remove image">&times;</button>
+            </div>
+
+            <div class="drop-area" id="person-drop-area">
+              <input type="file" id="person-file-input" accept="image/*" class="file-input">
+              <div class="drop-empty" id="person-drop-empty">
+                <div class="drop-icon">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </div>
+                <p class="drop-title">Drop Person Photo</p>
+                <p class="drop-hint">PNG, JPG, WEBP up to 20MB</p>
+                <button type="button" class="btn btn-sm btn-outline" id="btn-browse-person">Browse File</button>
+              </div>
+              <div class="drop-preview hidden" id="person-preview-wrapper">
+                <img id="person-preview-img" alt="Person Preview">
+              </div>
+            </div>
+          </div>
+
+          <!-- Garment Card -->
+          <div class="upload-card" id="garment-dropzone">
+            <div class="upload-card-header">
+              <span class="card-tag">Garment</span>
+              <button type="button" class="btn-clear hidden" id="btn-clear-garment" title="Remove image">&times;</button>
+            </div>
+
+            <div class="drop-area" id="garment-drop-area">
+              <input type="file" id="garment-file-input" accept="image/*" class="file-input">
+              <div class="drop-empty" id="garment-drop-empty">
+                <div class="drop-icon">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.5a2 2 0 0 0 .98 1.48L6 12v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-8l2.16-1.33a2 2 0 0 0 .98-1.48l.58-3.5a2 2 0 0 0-1.34-2.23z"/></svg>
+                </div>
+                <p class="drop-title">Drop Garment Photo</p>
+                <p class="drop-hint">Flat-lay shot or on model</p>
+                <button type="button" class="btn btn-sm btn-outline" id="btn-browse-garment">Browse File</button>
+              </div>
+              <div class="drop-preview hidden" id="garment-preview-wrapper">
+                <img id="garment-preview-img" alt="Garment Preview">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings & Controls -->
+      <div class="card-section">
+        <div class="section-header">
+          <span class="section-num">03</span>
+          <div>
+            <h2 class="section-title">Fitting Parameters</h2>
+            <p class="section-subtitle">Configure apparel category and model behaviors</p>
+          </div>
+        </div>
+
+        <!-- Category Selector -->
+        <div class="form-group">
+          <label class="form-label" for="category-group">Garment Category</label>
+          <div class="segmented-control" id="category-group">
+            <button type="button" class="segment-btn active" data-value="tops" id="cat-tops">
+              <span class="segment-icon">👕</span>
+              <span>Tops</span>
+            </button>
+            <button type="button" class="segment-btn" data-value="bottoms" id="cat-bottoms">
+              <span class="segment-icon">👖</span>
+              <span>Bottoms</span>
+            </button>
+            <button type="button" class="segment-btn" data-value="one-pieces" id="cat-onepieces">
+              <span class="segment-icon">👗</span>
+              <span>One-Pieces</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Garment Photo Type -->
+        <div class="form-group">
+          <label class="form-label" for="photo-type-group">Garment Presentation Type</label>
+          <div class="segmented-control" id="photo-type-group">
+            <button type="button" class="segment-btn active" data-value="model" id="photo-model">
+              <span>Worn by Model</span>
+            </button>
+            <button type="button" class="segment-btn" data-value="flat-lay" id="photo-flat">
+              <span>Flat-Lay Product Shot</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Collapsible Advanced Settings -->
+        <div class="accordion" id="advanced-accordion">
+          <button type="button" class="accordion-trigger" id="accordion-toggle">
+            <span class="accordion-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              Advanced Inference Parameters
+            </span>
+            <span class="accordion-arrow" id="accordion-arrow">▼</span>
+          </button>
+
+          <div class="accordion-body hidden" id="accordion-content">
+            <!-- Timesteps Slider -->
+            <div class="form-group">
+              <div class="slider-header">
+                <label for="input-timesteps">Diffusion Steps</label>
+                <span class="value-badge" id="val-timesteps">30 steps</span>
+              </div>
+              <input type="range" id="input-timesteps" min="15" max="50" step="5" value="30" class="styled-range">
+              <div class="range-marks">
+                <span>15 (Fast)</span>
+                <span>30 (Balanced)</span>
+                <span>50 (High Quality)</span>
+              </div>
+            </div>
+
+            <!-- Guidance Scale -->
+            <div class="form-group">
+              <div class="slider-header">
+                <label for="input-guidance">Guidance Scale (CFG)</label>
+                <span class="value-badge" id="val-guidance">1.5</span>
+              </div>
+              <input type="range" id="input-guidance" min="1.0" max="3.0" step="0.1" value="1.5" class="styled-range">
+            </div>
+
+            <!-- Seed & Randomize -->
+            <div class="form-group">
+              <label for="input-seed">Random Seed</label>
+              <div class="input-with-action">
+                <input type="number" id="input-seed" value="42" class="text-input">
+                <button type="button" class="btn btn-sm btn-outline" id="btn-random-seed" title="Generate random seed">
+                  🎲 Random
+                </button>
+              </div>
+            </div>
+
+            <!-- Segmentation-free Toggle -->
+            <div class="toggle-group">
+              <div class="toggle-text">
+                <span class="toggle-title">Segmentation-Free Mode</span>
+                <span class="toggle-desc">Preserves natural body shape & enables unconstrained garment volume</span>
+              </div>
+              <label class="switch" for="input-seg-free">
+                <input type="checkbox" id="input-seg-free" checked>
+                <span class="slider-switch"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Button -->
+        <div class="action-zone">
+          <button type="button" class="btn btn-primary btn-generate" id="btn-run-tryon">
+            <span class="btn-text">Generate Virtual Try-On</span>
+            <span class="btn-glow"></span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Column: Interactive Output & Comparison -->
+    <section class="panel output-panel" id="output-panel">
+      
+      <!-- Output Card -->
+      <div class="card-section result-card">
+        <div class="result-header">
+          <div>
+            <h2 class="section-title">Result & Comparison</h2>
+            <p class="section-subtitle" id="result-status-text">Ready. Upload images or select a preset to generate.</p>
+          </div>
+          <div class="result-actions" id="result-actions-bar">
+            <div class="view-toggle" id="view-mode-toggle">
+              <button type="button" class="view-btn active" id="btn-view-compare" title="Interactive Before / After comparison">Compare</button>
+              <button type="button" class="view-btn" id="btn-view-result" title="Full generated result">Result</button>
+              <button type="button" class="view-btn" id="btn-view-side" title="Side-by-side view">Side-by-Side</button>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline hidden" id="btn-download-result" title="Download image">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span>Download</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Viewer Area -->
+        <div class="display-container" id="display-container">
+          
+          <!-- Loading State Overlay -->
+          <div class="loading-overlay hidden" id="loading-overlay">
+            <div class="loading-card">
+              <div class="spinner-ring"></div>
+              <div class="loading-meta">
+                <h3 class="loading-title">Generating Virtual Try-On</h3>
+                <p class="loading-step" id="loading-step-text">Processing image tensors...</p>
+                <div class="progress-bar-track">
+                  <div class="progress-bar-fill" id="progress-bar-fill"></div>
+                </div>
+                <span class="loading-sub" id="loading-sub-text">FASHN VTON 1.5 Diffusion Model</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty Placeholder State -->
+          <div class="display-empty" id="display-empty">
+            <div class="empty-graphic">
+              <div class="empty-circle circle-1"></div>
+              <div class="empty-circle circle-2"></div>
+              <div class="empty-icon">✨</div>
+            </div>
+            <h3 class="empty-title">Virtual Try-On Canvas</h3>
+            <p class="empty-desc">Choose a test preset on the left or upload your own photos, then click <strong>Generate Virtual Try-On</strong>.</p>
+            <div class="empty-tips">
+              <span class="tip-pill">⚡ Model + Garment</span>
+              <span class="tip-pill">🎯 Pixel-space Diffusion</span>
+              <span class="tip-pill">✨ Maskless Fitting</span>
+            </div>
+          </div>
+
+          <!-- View 1: Interactive Before/After Compare Slider -->
+          <div class="compare-wrapper hidden" id="compare-wrapper">
+            <div class="compare-container" id="compare-container">
+              <!-- After (Result) Image -->
+              <img id="compare-img-after" class="compare-img compare-after" alt="Generated Try-On Result">
+              
+              <!-- Before (Original) Clipped Image -->
+              <div class="compare-clipped" id="compare-clipped">
+                <img id="compare-img-before" class="compare-img compare-before" alt="Original Model">
+              </div>
+
+              <!-- Draggable Slider Handle -->
+              <div class="compare-handle" id="compare-handle">
+                <div class="handle-line"></div>
+                <div class="handle-thumb">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 8L22 12L18 16"/><path d="M6 8L2 12L6 16"/></svg>
+                </div>
+                <div class="handle-line"></div>
+              </div>
+
+              <!-- Overlaid Corner Labels -->
+              <div class="corner-badge badge-left">Original</div>
+              <div class="corner-badge badge-right">Try-On VTON 1.5</div>
+            </div>
+          </div>
+
+          <!-- View 2: Pure Result Full View -->
+          <div class="result-pure-wrapper hidden" id="result-pure-wrapper">
+            <img id="result-pure-img" class="result-pure-img" alt="Virtual Try-On Output">
+          </div>
+
+          <!-- View 3: Side-by-Side Dual View -->
+          <div class="side-wrapper hidden" id="side-wrapper">
+            <div class="side-item">
+              <span class="side-tag">Original Person</span>
+              <div class="side-img-box">
+                <img id="side-img-original" alt="Original">
+              </div>
+            </div>
+            <div class="side-item">
+              <span class="side-tag tag-primary">Virtual Try-On</span>
+              <div class="side-img-box">
+                <img id="side-img-result" alt="Result">
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Generation Metrics Bar -->
+        <div class="metrics-bar hidden" id="metrics-bar">
+          <div class="metric-item">
+            <span class="metric-label">Inference Time</span>
+            <span class="metric-val" id="metric-time">--</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Category</span>
+            <span class="metric-val" id="metric-cat">--</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Resolution</span>
+            <span class="metric-val" id="metric-res">--</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Seed</span>
+            <span class="metric-val" id="metric-seed">--</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- History Gallery Drawer -->
+      <div class="card-section history-section">
+        <div class="history-header">
+          <h3 class="section-title-sm">Session History</h3>
+          <span class="history-counter" id="history-counter">0 generations</span>
+        </div>
+        <div class="history-strip" id="history-strip">
+          <p class="history-empty" id="history-empty-text">Generated try-ons will be stored here for quick review.</p>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Server Info Footer -->
+  <footer class="app-footer">
+    <div class="footer-content">
+      <div class="footer-info">
+        <span>Hosted Endpoint: <strong class="code-badge" id="footer-host-badge">http://0.0.0.0:7860</strong></span>
+        <span class="sep">•</span>
+        <span>Access over network via your server IP (e.g. <strong class="code-badge">http://172.28.0.12:7860</strong>)</span>
+      </div>
+      <div class="footer-brand">
+        Powered by <strong>FASHN AI VTON v1.5</strong>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Fullscreen Modal for Zooming Output -->
+  <div class="modal-backdrop hidden" id="zoom-modal">
+    <div class="modal-box">
+      <button type="button" class="modal-close" id="btn-close-modal">&times;</button>
+      <img id="modal-img" alt="Zoomed View">
+      <div class="modal-footer">
+        <a id="btn-modal-download" class="btn btn-primary" download="fashn_tryon.png">Download Image</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>

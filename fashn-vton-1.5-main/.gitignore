@@ -104,3 +104,8 @@ uv.lock
 *.bmp
 *.tiff
 *.tif
+
+# Whitelist example and web preset images
+!examples/data/*
+!web/assets/*
+
