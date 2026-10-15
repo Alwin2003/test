@@ -329,18 +329,19 @@ def main():
 ======================================================================
   [FASHN VTON v1.5] Virtual Try-On Studio Server
 ======================================================================
-  * Local URL:           http://localhost:{args.port}
-  * Network / Host URL:  http://{args.host}:{args.port}
+  * Server Host URL:     http://172.28.0.12:{args.port}
+  * Local Machine URL:   http://localhost:{args.port}
+  * Interface Binding:   http://{args.host}:{args.port} (0.0.0.0 binds to all IPs)
   * Weights Directory:   {server.weights_dir}
   * Weights Status:      {'Found' if check_weights_available(server.weights_dir) else 'Not Found (Download via scripts/download_weights.py or web UI)'}
   * Mock Mode:           {'Enabled (Fast UI test)' if server.mock_mode else 'Disabled (Real Neural Model)'}
 
-  You can access this web UI over your local network using your server IP:
-  -> http://<YOUR_SERVER_IP>:{args.port} (e.g. http://172.28.0.12:{args.port} or http://192.168.50.14:{args.port})
+  Access in browser:
+  -> http://172.28.0.12:{args.port}
 ======================================================================
 """
     print(banner)
-    logger.info("Serving FASHN VTON Web Studio on port %d...", args.port)
+    logger.info("Serving FASHN VTON Web Studio on http://172.28.0.12:%d...", args.port)
 
     try:
         server.serve_forever()
